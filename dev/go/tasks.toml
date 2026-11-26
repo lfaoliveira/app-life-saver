@@ -1,0 +1,89 @@
+[help]
+description = "List available mise tasks"
+run = "mise tasks ls"
+
+[confirm]
+description = "Confirm a potentially destructive operation"
+confirm = "Are you sure?"
+shell = "bash -c"
+run = "true"
+
+[no-dirty]
+description = "Fail if the Git working tree has changes"
+shell = "bash -c"
+run = 'test -z "$(git status --porcelain)"'
+
+[audit]
+description = "Run Go quality and vulnerability checks"
+depends = ["tidy", "lint", "test", "test-race", "vet", "vuln"]
+shell = "bash -c"
+run = [
+    "go mod tidy -diff",
+    "go mod verify",
+    "go run honnef.co/go/tools/cmd/staticcheck@latest -checks=all,-ST1000,-U1000 ./...",
+]
+
+[tidy]
+description = "Tidy modules, apply Go fixes, and format source files"
+run = ["go mod tidy -v", "go fix ./...", "go fmt ./..."]
+
+[lint]
+description = "Run golangci-lint"
+run = ["golangci-lint run"]
+
+[test]
+description = "Run all tests with the race detector"
+run = "go test -race -buildvcs ./..."
+
+["test:cover"]
+description = "Run tests with coverage and open the coverage report"
+run = [
+    "go test -race -buildvcs -coverprofile=coverage.out ./...",
+    "go tool cover -html=coverage.out",
+]
+
+[vet]
+description = "Run go vet"
+run = "go vet ./..."
+
+[test-race]
+description = "Run all tests with the race detector"
+run = "go test -race ./..."
+
+[vuln]
+description = "Check dependencies for known vulnerabilities"
+run = "go run golang.org/x/vuln/cmd/govulncheck@latest ./..."
+
+
+#=======PROD=======#
+[build]
+description = "Build the Go application"
+shell = "bash -c"
+run = [
+    "mkdir -p tmp/bin",
+    "go build -o=tmp/bin/{{vars.binary_name}} {{vars.main_package_path}}",
+]
+run_windows = [
+    "mkdir -p tmp/bin",
+    "go build -o=tmp/bin/{{vars.binary_name}}.exe {{vars.main_package_path}}",
+]
+
+[run]
+description = "Build and run the application"
+depends = ["build"]
+shell = "bash -c"
+run = "./tmp/bin/{{vars.binary_name}}"
+run_windows = "./tmp/bin/{{vars.binary_name}}.exe"
+
+["run-live"]
+description = "Run the application with live reload"
+shell = "bash -c"
+run = 'go run github.com/cosmtrek/air@v1.43.0 --build.cmd "mise run build" --build.bin "tmp/bin/{{vars.binary_name}}" --build.delay "100" --build.exclude_dir "" --build.include_ext "go, tpl, tmpl, html, css, scss, js, ts, sql, jpeg, jpg, gif, png, bmp, svg, webp, ico" --misc.clean_on_exit "true"'
+run_windows = 'go run github.com/cosmtrek/air@v1.43.0 --build.cmd "mise run build" --build.bin "tmp/bin/{{vars.binary_name}}.exe" --build.delay "100" --build.exclude_dir "" --build.include_ext "go, tpl, tmpl, html, css, scss, js, ts, sql, jpeg, jpg, gif, png, bmp, svg, webp, ico" --misc.clean_on_exit "true"'
+
+[push]
+description = "Audit the project and push changes"
+depends = ["audit", "no-dirty"]
+confirm = "Are you sure?"
+shell = "bash -c"
+run = "git push"

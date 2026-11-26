@@ -7,6 +7,7 @@ go = "latest"
 task = "latest"
 chezmoi = "latest"
 
+#=======SETUP APPS=======#
 [tasks.setup]
 description = "Roda o setup: mise run setup -- work|personal"
 run = "python setup.py"
