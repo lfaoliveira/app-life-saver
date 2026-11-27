@@ -2,6 +2,8 @@
 description = "List available mise tasks"
 run = "mise tasks ls"
 
+#=======AUDIT AND UTILS=======#
+
 [confirm]
 description = "Confirm a potentially destructive operation"
 confirm = "Are you sure?"
@@ -13,6 +15,7 @@ description = "Fail if the Git working tree has changes"
 shell = "bash -c"
 run = 'test -z "$(git status --porcelain)"'
 
+
 [audit]
 description = "Run Go quality and vulnerability checks"
 depends = ["tidy", "lint", "test", "test-race", "vet", "vuln"]
@@ -23,6 +26,7 @@ run = [
     "go run honnef.co/go/tools/cmd/staticcheck@latest -checks=all,-ST1000,-U1000 ./...",
 ]
 
+#=======FORMAT AND LINT=======#
 [tidy]
 description = "Tidy modules, apply Go fixes, and format source files"
 run = ["go mod tidy -v", "go fix ./...", "go fmt ./..."]
@@ -30,6 +34,8 @@ run = ["go mod tidy -v", "go fix ./...", "go fmt ./..."]
 [lint]
 description = "Run golangci-lint"
 run = ["golangci-lint run"]
+
+#=======TESTING=======#
 
 [test]
 description = "Run all tests with the race detector"
@@ -42,13 +48,14 @@ run = [
     "go tool cover -html=coverage.out",
 ]
 
-[vet]
-description = "Run go vet"
-run = "go vet ./..."
-
 [test-race]
 description = "Run all tests with the race detector"
 run = "go test -race ./..."
+
+#=======SECURITY=======#
+[vet]
+description = "Run go vet"
+run = "go vet ./..."
 
 [vuln]
 description = "Check dependencies for known vulnerabilities"
